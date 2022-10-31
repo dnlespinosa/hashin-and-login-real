@@ -17,3 +17,13 @@ class User(db.model):
     email = db.Column(db.Text, nullable=False, unique=True, max_length=50)
     first_name = db.Column(db.Text, nullable=False, max_length=30)
     last_name = db.Column(db.Text, nullable=False, max_length=30)
+
+
+class Feedback(db.Model):
+    __tablename__ = 'feedback'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.Text, nullable=False, max_length=100)
+    content = db.Column(db.text, nullable=False)
+    username = db.ForeignKey(User, username)
+    

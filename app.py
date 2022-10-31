@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from flask import Flask, render_template, redirect, session, flash
 from flask_debugtoolbar import DebugToolbarExtension
-from models import connect_db, db, User, Tweet
+from models import connect_db, db, User, Feedback
 from forms import UserForm, TweetForm
 from sqlalchemy.exc import IntegrityError
 
@@ -59,13 +59,13 @@ def login_user():
 
         if user:
             session['user_id'] = user.id
-            return redirect('/secret')
+            return redirect('/users/<username>')
         else:
             form.username.errors = ['WRONG MOVE']
     return render_template('login.html', form=form)
 
 
-@app.route('/secret')
+@app.route('/users/<username>')
 def secret():
     if 'user_id' not in session:
         flash('you must be logged in')
@@ -74,11 +74,65 @@ def secret():
         flash('YOU MADE IT')
         return render_template('secret.html')
 
+@app.route('/user/<username>/delete', methods=['GET', 'POST'])
+def delete_item(id):
+    if 'user_id' not in session:
+        return redirect('/')
+    user = User.query.get_or_404(id)
+    if user.user_id == session['user_id']:
+        db.session.delete(user)
+        db.session.commit()
+        return redirect('/')
+    else:
+        return redirect('/login')
+
+@app.route('/users/<username>/feedback/add')
+def add_feedback(username):
+    form = FeedbackForm():
+
+    if form.validate_on_submit():
+        username = form.username.data
+        title = form.title.data
+        content = form.content.data
+        id = form.id.data
+
+        text=form.text.data
+        feedback = Feedback(text=text, user_id=session['user_id'])
+        db.session.add(feedback)
+        db.session.commit()
+        rediect('/users/<username>')
+
+@app.route('/users/<username>/feedback/<int:feedback_id>/update', methods=['GET', 'POST'])
+def feedback_update(feedback_id):
+    if 'user_id' not in session:
+        return redirect('/')
+
+    feedback = Feedback.query.get(feedback_id)
+    form = Feedbackform(feedback)
+
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+
+        db.session.commit()
+        return redirect('/user/<username>')
+
+@app.route('/feedback/<feedback-id>/delete', methods=['POST'])
+def feedback_delete(feedback_id):
+    if 'user_id' not in session:
+        return redirect('/')
+    
+    feedback = Feedback.query.get(feedback_id)
+
+    db.session.delete(user)
+    db.session.commit()
+    return redirect('/')
+
+    
+
+    
     
 @app.route('/logout')
 def logout_user():
     session.pop('user_id')
     return redirect('/')
-
-    
-
